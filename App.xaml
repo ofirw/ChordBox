@@ -1,0 +1,165 @@
+﻿<Application x:Class="ChordBox.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:ChordBox"
+             xmlns:conv="clr-namespace:ChordBox.Converters"
+             StartupUri="MainWindow.xaml">
+    <Application.Resources>
+        <!-- Converters -->
+        <conv:BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <conv:InverseBooleanConverter x:Key="InverseBool"/>
+        <conv:PlusOneConverter x:Key="PlusOneConverter"/>
+        <conv:CountToVisibilityConverter x:Key="CountToVis"/>
+
+        <!-- Colors -->
+        <Color x:Key="PrimaryBg">#0f0f23</Color>
+        <Color x:Key="CardBg">#16213e</Color>
+        <Color x:Key="CardBorder">#2a2a4a</Color>
+        <Color x:Key="Accent">#e94560</Color>
+        <Color x:Key="AccentBlue">#00d2ff</Color>
+        <Color x:Key="TextPrimary">#eaeaea</Color>
+        <Color x:Key="TextSecondary">#7a7a9a</Color>
+        <Color x:Key="ButtonBg">#1e1e3a</Color>
+        <Color x:Key="ButtonHover">#2e2e5a</Color>
+        <Color x:Key="ButtonSelected">#e94560</Color>
+
+        <SolidColorBrush x:Key="PrimaryBgBrush" Color="{StaticResource PrimaryBg}"/>
+        <SolidColorBrush x:Key="CardBgBrush" Color="{StaticResource CardBg}"/>
+        <SolidColorBrush x:Key="CardBorderBrush" Color="{StaticResource CardBorder}"/>
+        <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource Accent}"/>
+        <SolidColorBrush x:Key="AccentBlueBrush" Color="{StaticResource AccentBlue}"/>
+        <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimary}"/>
+        <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondary}"/>
+        <SolidColorBrush x:Key="ButtonBgBrush" Color="{StaticResource ButtonBg}"/>
+
+        <!-- Transport Button Style -->
+        <Style x:Key="TransportButton" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource ButtonBgBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource CardBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="14,8"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background">
+                                    <Setter.Value>
+                                        <SolidColorBrush Color="{StaticResource ButtonHover}"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.4"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Chord Picker Button Style -->
+        <Style x:Key="PickerButton" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource ButtonBgBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource CardBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="Margin" Value="3"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="MinWidth" Value="48"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background">
+                                    <Setter.Value>
+                                        <SolidColorBrush Color="{StaticResource Accent}"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Loop ToggleButton Style -->
+        <Style x:Key="LoopToggle" TargetType="ToggleButton">
+            <Setter Property="Background" Value="{StaticResource ButtonBgBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource CardBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="14,8"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="border"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="border" Property="Background">
+                                    <Setter.Value>
+                                        <SolidColorBrush Color="{StaticResource Accent}"/>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter TargetName="border" Property="BorderBrush">
+                                    <Setter.Value>
+                                        <SolidColorBrush Color="{StaticResource Accent}"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background">
+                                    <Setter.Value>
+                                        <SolidColorBrush Color="{StaticResource ButtonHover}"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Slider Style -->
+        <Style x:Key="TempoSlider" TargetType="Slider">
+            <Setter Property="Minimum" Value="40"/>
+            <Setter Property="Maximum" Value="300"/>
+            <Setter Property="Width" Value="180"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="IsSnapToTickEnabled" Value="True"/>
+            <Setter Property="TickFrequency" Value="1"/>
+        </Style>
+    </Application.Resources>
+</Application>

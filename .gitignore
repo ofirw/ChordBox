@@ -1,0 +1,86 @@
+# .NET build outputs
+bin/
+obj/
+
+# .NET user-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# .NET Core
+project.lock.json
+project.fragment.lock.json
+artifacts/
+**/Properties/launchSettings.json
+
+# Mono auto generated files
+mono_crash.*
+
+# Xamarin
+xamarin/
+
+# Visual Studio
+.vs/
+*.vspscc
+*.vssscc
+.builds
+*.pidb
+*.svclog
+*.scc
+
+# Rider
+.idea/
+*.sln.iml
+
+# CodeRush
+.cr/
+
+# TeamCity
+_build/
+
+# DotCover
+*.dotCover
+
+# AxoCover
+.axoCover/
+!.axoCover/settings.json
+
+# Coverlet
+coverage*.json
+coverage*.xml
+coverage*.info
+
+# NCrunch
+*.ncrunch*
+.*crunch*.local.xml
+
+# MSTest
+*.TestResults
+*.trx
+*.vspx
+
+# NuGet
+*.nupkg
+**/packages/*
+!**/packages/build/
+**/*.snupkg
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+
+# Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+
+# Local History for Visual Studio Code
+.history/
+
+# Built Visual Studio Code Extensions
+*.vsix

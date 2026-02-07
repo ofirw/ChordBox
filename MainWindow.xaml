@@ -1,0 +1,911 @@
+﻿<Window x:Class="ChordBox.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ChordBox"
+        xmlns:vm="clr-namespace:ChordBox.ViewModels"
+        xmlns:models="clr-namespace:ChordBox.Models"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
+        mc:Ignorable="d"
+        Title="ChordBox" Height="850" Width="1500"
+        Icon="Assets/1-ad03f54e.ico"
+        MinHeight="650" MinWidth="1200"
+        Background="{StaticResource PrimaryBgBrush}"
+        WindowStartupLocation="CenterScreen"
+        Closing="Window_Closing">
+    <Window.Resources>
+        <CollectionViewSource x:Key="GroupedStyles" Source="{Binding Styles}">
+            <CollectionViewSource.GroupDescriptions>
+                <PropertyGroupDescription PropertyName="Category"/>
+            </CollectionViewSource.GroupDescriptions>
+        </CollectionViewSource>
+        <CollectionViewSource x:Key="GroupedInstruments" Source="{Binding Instruments}">
+            <CollectionViewSource.GroupDescriptions>
+                <PropertyGroupDescription PropertyName="Category"/>
+            </CollectionViewSource.GroupDescriptions>
+        </CollectionViewSource>
+    </Window.Resources>
+    <Grid x:Name="_mainGrid">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- ═══════════ ROW 0: TRANSPORT BAR ═══════════ -->
+        <Border Grid.Row="0" Background="#11ffffff" Padding="12,10">
+            <WrapPanel VerticalAlignment="Center">
+                <!-- File operations -->
+                <Button Style="{StaticResource TransportButton}"
+                        Content="New" Command="{Binding NewCommand}" Margin="0,0,4,0"/>
+                <Button Style="{StaticResource TransportButton}"
+                        Content="Open" Command="{Binding OpenCommand}" Margin="0,0,4,0"/>
+                <Button Style="{StaticResource TransportButton}"
+                        Content="Save" Command="{Binding SaveCommand}" Margin="0,0,4,0"/>
+                <Button Style="{StaticResource TransportButton}"
+                        Content="Save As" Command="{Binding SaveAsCommand}" Margin="0,0,12,0"/>
+
+                <Rectangle Width="1" Height="24" Fill="{StaticResource CardBorderBrush}" Margin="0,0,12,0"/>
+
+                <Button Style="{StaticResource TransportButton}"
+                        Content="▶  Play" Command="{Binding PlayCommand}" Margin="0,0,6,0"/>
+                <Button Style="{StaticResource TransportButton}"
+                        Content="■  Stop" Command="{Binding StopCommand}" Margin="0,0,6,0"/>
+                <ToggleButton Style="{StaticResource LoopToggle}"
+                              Content="⟳ Loop" IsChecked="{Binding IsLooping}" Margin="0,0,16,0"/>
+
+                <Rectangle Width="1" Height="24" Fill="{StaticResource CardBorderBrush}" Margin="0,0,16,0"/>
+
+                <!-- Style selector (grouped) -->
+                <TextBlock Text="Style" Foreground="{StaticResource TextSecondaryBrush}"
+                           VerticalAlignment="Center" FontSize="13" Margin="0,0,8,0"/>
+                <ComboBox ItemsSource="{Binding Source={StaticResource GroupedStyles}}"
+                          SelectedItem="{Binding SelectedStyle}"
+                          Width="150" VerticalAlignment="Center" Margin="0,0,12,0">
+                    <ComboBox.GroupStyle>
+                        <GroupStyle>
+                            <GroupStyle.HeaderTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="11"
+                                               Foreground="#888" Padding="4,3,0,1"/>
+                                </DataTemplate>
+                            </GroupStyle.HeaderTemplate>
+                        </GroupStyle>
+                    </ComboBox.GroupStyle>
+                </ComboBox>
+
+                <!-- Instrument selector (grouped) -->
+                <TextBlock Text="Inst" Foreground="{StaticResource TextSecondaryBrush}"
+                           VerticalAlignment="Center" FontSize="13" Margin="0,0,8,0"/>
+                <ComboBox ItemsSource="{Binding Source={StaticResource GroupedInstruments}}"
+                          SelectedItem="{Binding SelectedInstrument}"
+                          Width="190" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <ComboBox.GroupStyle>
+                        <GroupStyle>
+                            <GroupStyle.HeaderTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="11"
+                                               Foreground="#888" Padding="4,3,0,1"/>
+                                </DataTemplate>
+                            </GroupStyle.HeaderTemplate>
+                        </GroupStyle>
+                    </ComboBox.GroupStyle>
+                </ComboBox>
+
+                <!-- Strum pattern (guitar only) -->
+                <TextBlock Text="Strum" Foreground="{StaticResource TextSecondaryBrush}"
+                           VerticalAlignment="Center" FontSize="13" Margin="0,0,8,0"
+                           Visibility="{Binding IsStrummedInstrument, Converter={StaticResource BoolToVis}}"/>
+                <ComboBox ItemsSource="{Binding StrumPatterns}"
+                          SelectedItem="{Binding SelectedStrumPattern}"
+                          Width="150" VerticalAlignment="Center" Margin="0,0,4,0"
+                          Visibility="{Binding IsStrummedInstrument, Converter={StaticResource BoolToVis}}"/>
+                <Button Style="{StaticResource TransportButton}"
+                        Content="✏" Command="{Binding OpenStrumEditorCommand}"
+                        FontSize="12" Padding="4,2" Margin="0,0,16,0"
+                        ToolTip="Edit strum pattern"
+                        Visibility="{Binding IsStrummedInstrument, Converter={StaticResource BoolToVis}}"/>
+
+                <Rectangle Width="1" Height="24" Fill="{StaticResource CardBorderBrush}" Margin="0,0,16,0"/>
+
+                <!-- Tempo -->
+                <TextBlock Text="Tempo" Foreground="{StaticResource TextSecondaryBrush}"
+                           VerticalAlignment="Center" FontSize="13" Margin="0,0,8,0"/>
+                <Slider Style="{StaticResource TempoSlider}"
+                        Value="{Binding Tempo, Mode=TwoWay}" Margin="0,0,8,0"/>
+                <TextBox Text="{Binding Tempo, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Margin="0,0,4,0"
+                         Width="50" FontSize="14" FontWeight="SemiBold" Padding="4,2"
+                         Background="#1a1a3a" Foreground="{StaticResource TextPrimaryBrush}"
+                         BorderBrush="{StaticResource CardBorderBrush}" VerticalAlignment="Center"
+                         ToolTip="Click to type tempo directly"/>
+                <Button Style="{StaticResource TransportButton}"
+                        Content="TAP" Command="{Binding TapTempoCommand}"
+                        FontSize="11" FontWeight="Bold" Padding="8,4" Margin="0,0,8,0"
+                        ToolTip="Tap repeatedly to set tempo"/>
+            </WrapPanel>
+        </Border>
+
+        <!-- ═══════════ ROW 1: SECONDARY TOOLBAR ═══════════ -->
+        <Border Grid.Row="1" Background="#09ffffff" Padding="12,6">
+            <WrapPanel VerticalAlignment="Center">
+                <!-- Song title -->
+                <TextBlock Text="Title" Foreground="{StaticResource TextSecondaryBrush}"
+                           VerticalAlignment="Center" FontSize="13" Margin="0,0,8,0"/>
+                <TextBox Text="{Binding SongTitle, UpdateSourceTrigger=PropertyChanged}"
+                         Width="180" FontSize="14" FontWeight="SemiBold"
+                         Padding="6,4" Margin="0,0,16,0"
+                         Background="#1a1a3a" Foreground="{StaticResource TextPrimaryBrush}"
+                         BorderBrush="{StaticResource CardBorderBrush}"/>
+
+                <Rectangle Width="1" Height="24" Fill="{StaticResource CardBorderBrush}" Margin="0,0,16,0"/>
+
+                <!-- Time signature -->
+                <TextBlock Text="Time" Foreground="{StaticResource TextSecondaryBrush}"
+                           VerticalAlignment="Center" FontSize="13" Margin="0,0,6,0"/>
+                <ComboBox Width="60" VerticalAlignment="Center" Margin="0,0,16,0"
+                          SelectedItem="{Binding GlobalBeatsPerBar}">
+                    <sys:Int32>2</sys:Int32>
+                    <sys:Int32>3</sys:Int32>
+                    <sys:Int32>4</sys:Int32>
+                    <sys:Int32>5</sys:Int32>
+                    <sys:Int32>6</sys:Int32>
+                    <sys:Int32>7</sys:Int32>
+                </ComboBox>
+
+                <Rectangle Width="1" Height="24" Fill="{StaticResource CardBorderBrush}" Margin="0,0,16,0"/>
+
+                <Button Style="{StaticResource TransportButton}"
+                        Content="+ Bar" Command="{Binding AddBarCommand}" Margin="0,0,6,0"/>
+                <Button Style="{StaticResource TransportButton}"
+                        Content="− Bar" Command="{Binding RemoveBarCommand}" Margin="0,0,16,0"/>
+
+                <Rectangle Width="1" Height="24" Fill="{StaticResource CardBorderBrush}" Margin="0,0,16,0"/>
+
+                <!-- Loop controls -->
+                <Button Style="{StaticResource TransportButton}"
+                        Content="🔁 Set Loop" Command="{Binding SetLoopStartCommand}" Margin="0,0,6,0"/>
+                <ToggleButton Style="{StaticResource LoopToggle}"
+                              Content="♪ Lyrics" IsChecked="{Binding ShowLyrics}" Margin="0,0,6,0"/>
+                <Button Style="{StaticResource TransportButton}"
+                        Content="🎼 Key Helper" Command="{Binding ToggleComposingHelpCommand}" Margin="0,0,6,0"/>
+
+                <Rectangle Width="1" Height="24" Fill="{StaticResource CardBorderBrush}" Margin="0,0,16,0"/>
+
+                <!-- SoundFont controls -->
+                <Button Style="{StaticResource TransportButton}"
+                        Content="🔊 Load SF2" Command="{Binding LoadSoundFontCommand}" Margin="0,0,4,0"/>
+                <Button Style="{StaticResource TransportButton}"
+                        Content="✕" Command="{Binding UnloadSoundFontCommand}" Padding="4,4"
+                        ToolTip="Unload SoundFont" Margin="0,0,4,0"/>
+                <ComboBox Width="140" FontSize="10" VerticalAlignment="Center" Margin="0,0,4,0"
+                          ItemsSource="{Binding RecentSoundFonts}"
+                          ToolTip="Recent SoundFonts"
+                          IsEditable="False"
+                          DisplayMemberPath=""
+                          SelectionChanged="RecentSF2_SelectionChanged">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}" TextTrimming="CharacterEllipsis"/>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+                <TextBlock Text="{Binding SoundFontStatus}" FontSize="10"
+                           Foreground="{StaticResource TextSecondaryBrush}"
+                           VerticalAlignment="Center" Margin="2,0,0,0"/>
+
+                <!-- Undo/Redo -->
+                <Rectangle Width="1" Height="24" Fill="{StaticResource CardBorderBrush}" Margin="16,0,16,0"/>
+                <Button Style="{StaticResource TransportButton}"
+                        Content="↩" ToolTip="Undo (Ctrl+Z)" Command="{Binding UndoCommand}" Margin="0,0,4,0" FontSize="14"/>
+                <Button Style="{StaticResource TransportButton}"
+                        Content="↪" ToolTip="Redo (Ctrl+Y)" Command="{Binding RedoCommand}" Margin="0,0,6,0" FontSize="14"/>
+
+                <!-- Power chord indicator -->
+                <TextBlock Text="{Binding PowerChordIndicator}"
+                           Foreground="#e9b845" FontSize="12" FontWeight="Bold"
+                           VerticalAlignment="Center" Margin="8,0,0,0"/>
+
+                <!-- Loop mode indicator -->
+                <TextBlock Foreground="{StaticResource AccentBlueBrush}"
+                           VerticalAlignment="Center" FontSize="12" FontStyle="Italic"
+                           Visibility="{Binding IsSettingLoopStart, Converter={StaticResource BoolToVis}}"
+                           Text="  Click a bar for loop START..." Margin="6,0,0,0"/>
+                <TextBlock Foreground="#4ec9b0"
+                           VerticalAlignment="Center" FontSize="12" FontStyle="Italic"
+                           Visibility="{Binding IsSettingLoopEnd, Converter={StaticResource BoolToVis}}"
+                           Text="  Now click a bar for loop END..." Margin="6,0,0,0"/>
+            </WrapPanel>
+        </Border>
+
+        <!-- ═══════════ ROW 2: LOOP LIST PANEL ═══════════ -->
+        <Border Grid.Row="2" Background="#06ffffff" Padding="12,4"
+                Visibility="{Binding LoopRegionsView.Count, Converter={StaticResource CountToVis}, FallbackValue=Collapsed}">
+            <ItemsControl ItemsSource="{Binding LoopRegionsView}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type models:LoopRegion}">
+                        <Border Background="#18ffffff" CornerRadius="6" Padding="8,3" Margin="2">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock FontSize="12" Foreground="#4ec9b0" VerticalAlignment="Center">
+                                    <TextBlock.Text>
+                                        <MultiBinding StringFormat="{}[{0}–{1}] ×{2}">
+                                            <Binding Path="StartBarIndex" Converter="{StaticResource PlusOneConverter}"/>
+                                            <Binding Path="EndBarIndex" Converter="{StaticResource PlusOneConverter}"/>
+                                            <Binding Path="RepeatCount"/>
+                                        </MultiBinding>
+                                    </TextBlock.Text>
+                                </TextBlock>
+                                <TextBlock Text="{Binding Name}" FontSize="12" FontStyle="Italic"
+                                           Foreground="{StaticResource TextSecondaryBrush}" Margin="6,0,0,0"
+                                           VerticalAlignment="Center"/>
+                                <Button Content="✎" FontSize="11" Padding="4,1" Margin="6,0,0,0"
+                                        Style="{StaticResource TransportButton}"
+                                        Command="{Binding DataContext.EditLoopByIndexCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        CommandParameter="{Binding}"/>
+                                <Button Content="✕" FontSize="11" Padding="4,1" Margin="2,0,0,0"
+                                        Foreground="#ff6b6b"
+                                        Style="{StaticResource TransportButton}"
+                                        Command="{Binding DataContext.RemoveLoopByIndexCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        CommandParameter="{Binding}"/>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </Border>
+
+        <!-- ═══════════ ROW 3: BAR GRID ═══════════ -->
+        <ScrollViewer x:Name="_barGrid" Grid.Row="3" VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled" Padding="10">
+            <ItemsControl ItemsSource="{Binding Bars}" Margin="8">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type vm:BarViewModel}">
+                        <StackPanel Margin="3,2" VerticalAlignment="Bottom">
+                            <!-- Loop layers (outermost at top) -->
+                            <ItemsControl ItemsSource="{Binding LoopLayers}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type vm:LoopLayerInfo}">
+                                        <Grid MinHeight="16">
+                                            <Border Height="3" VerticalAlignment="Bottom"
+                                                    Background="{Binding Brush}" CornerRadius="1.5" Margin="1,0"/>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left"
+                                                        VerticalAlignment="Top"
+                                                        Visibility="{Binding StartVisibility}">
+                                                <TextBlock Text="⌐" FontSize="12" FontWeight="Bold"
+                                                           Foreground="{Binding Brush}"/>
+                                                <TextBlock Text="{Binding NameDisplay}" FontSize="9" FontWeight="SemiBold"
+                                                           Foreground="{Binding Brush}" Margin="1,0,0,0"/>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"
+                                                        VerticalAlignment="Top"
+                                                        Visibility="{Binding EndVisibility}">
+                                                <TextBlock Text="{Binding RepeatText}" FontSize="10" FontWeight="Bold"
+                                                           Foreground="{Binding Brush}" Margin="0,0,1,0"/>
+                                                <TextBlock Text="¬" FontSize="12" FontWeight="Bold"
+                                                           Foreground="{Binding Brush}"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <!-- Bar card -->
+                            <Border Width="160" Height="100"
+                                    CornerRadius="8"
+                                    Background="{Binding CardBackground}"
+                                    BorderBrush="{Binding CardBorder}"
+                                    BorderThickness="2"
+                                    Cursor="Hand" SnapsToDevicePixels="True">
+                                <Border.InputBindings>
+                                    <MouseBinding MouseAction="LeftClick"
+                                                  Command="{Binding DataContext.SelectBarCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                  CommandParameter="{Binding}"/>
+                                </Border.InputBindings>
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <!-- Top row: bar number, time sig, buttons -->
+                                    <DockPanel Grid.Row="0" Margin="6,3,3,0">
+                                        <TextBlock Text="{Binding BarNumber, Mode=OneWay}" FontSize="12" FontWeight="Bold"
+                                                   Foreground="{StaticResource AccentBlueBrush}" DockPanel.Dock="Left"
+                                                   VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding TimeSigDisplay, Mode=OneWay}" FontSize="10" FontWeight="SemiBold"
+                                                   Foreground="#888" DockPanel.Dock="Left" VerticalAlignment="Center" Margin="6,0,0,0"/>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" DockPanel.Dock="Right">
+                                            <Button Content="▶" FontSize="9" Padding="3,1"
+                                                    Opacity="0.6" Cursor="Hand"
+                                                    Style="{StaticResource TransportButton}"
+                                                    Command="{Binding DataContext.PlayFromBarCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}"/>
+                                            <Button Content="⚙" FontSize="10" Padding="3,1" Margin="2,0,0,0"
+                                                    Opacity="0.6" Cursor="Hand"
+                                                    Style="{StaticResource TransportButton}"
+                                                    Command="{Binding DataContext.OpenBarSettingsCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}"/>
+                                            <Button Content="🗑" FontSize="9" Padding="3,1" Margin="2,0,0,0"
+                                                    Opacity="0.5" Cursor="Hand" ToolTip="Delete bar"
+                                                    Style="{StaticResource TransportButton}"
+                                                    Command="{Binding DataContext.DeleteBarCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}"/>
+                                        </StackPanel>
+                                    </DockPanel>
+                                    <StackPanel Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center">
+
+                                        <!-- Single chord display -->
+                                        <TextBlock Text="{Binding ChordDisplay}"
+                                                   FontSize="20" FontWeight="Bold"
+                                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                                   HorizontalAlignment="Center"
+                                                   Visibility="{Binding ShowPerBeatRow, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}"/>
+
+                                        <!-- Per-beat chord display with edit highlights -->
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"
+                                                    Visibility="{Binding ShowPerBeatRow, Converter={StaticResource BoolToVis}}"
+                                                    Margin="1,0">
+                                            <Border BorderBrush="{Binding EditBeat1Brush}" BorderThickness="0,0,0,2" Padding="1,0">
+                                                <TextBlock Text="{Binding Beat1Chord}" FontSize="10" FontWeight="SemiBold"
+                                                           Foreground="{StaticResource TextPrimaryBrush}" Margin="2,0"/>
+                                            </Border>
+                                            <Border BorderBrush="{Binding EditBeat2Brush}" BorderThickness="0,0,0,2" Padding="1,0">
+                                                <TextBlock Text="{Binding Beat2Chord}" FontSize="10" FontWeight="SemiBold"
+                                                           Foreground="{StaticResource TextPrimaryBrush}" Margin="2,0"/>
+                                            </Border>
+                                            <Border BorderBrush="{Binding EditBeat3Brush}" BorderThickness="0,0,0,2" Padding="1,0"
+                                                    Visibility="{Binding ShowBeat3, Converter={StaticResource BoolToVis}}">
+                                                <TextBlock Text="{Binding Beat3Chord}" FontSize="10" FontWeight="SemiBold"
+                                                           Foreground="{StaticResource TextPrimaryBrush}" Margin="2,0"/>
+                                            </Border>
+                                            <Border BorderBrush="{Binding EditBeat4Brush}" BorderThickness="0,0,0,2" Padding="1,0"
+                                                    Visibility="{Binding ShowBeat4, Converter={StaticResource BoolToVis}}">
+                                                <TextBlock Text="{Binding Beat4Chord}" FontSize="10" FontWeight="SemiBold"
+                                                           Foreground="{StaticResource TextPrimaryBrush}" Margin="2,0"/>
+                                            </Border>
+                                            <Border BorderBrush="{Binding EditBeat5Brush}" BorderThickness="0,0,0,2" Padding="1,0"
+                                                    Visibility="{Binding ShowBeat5, Converter={StaticResource BoolToVis}}">
+                                                <TextBlock Text="{Binding Beat5Chord}" FontSize="10" FontWeight="SemiBold"
+                                                           Foreground="{StaticResource TextPrimaryBrush}" Margin="2,0"/>
+                                            </Border>
+                                        </StackPanel>
+
+                                        <!-- Beat dots -->
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"
+                                                    Margin="0,4,0,0">
+                                            <Ellipse Width="10" Height="10" Fill="{Binding Beat1Brush}" Margin="2,0"/>
+                                            <Ellipse Width="10" Height="10" Fill="{Binding Beat2Brush}" Margin="2,0"/>
+                                            <Ellipse Width="10" Height="10" Fill="{Binding Beat3Brush}" Margin="2,0"
+                                                     Visibility="{Binding ShowBeat3, Converter={StaticResource BoolToVis}}"/>
+                                            <Ellipse Width="10" Height="10" Fill="{Binding Beat4Brush}" Margin="2,0"
+                                                     Visibility="{Binding ShowBeat4, Converter={StaticResource BoolToVis}}"/>
+                                            <Ellipse Width="10" Height="10" Fill="{Binding Beat5Brush}" Margin="2,0"
+                                                     Visibility="{Binding ShowBeat5, Converter={StaticResource BoolToVis}}"/>
+                                        </StackPanel>
+
+                                        <!-- Inline editing indicator -->
+                                        <TextBlock Text="{Binding EditingIndicator}"
+                                                   FontSize="9" FontStyle="Italic"
+                                                   Foreground="{StaticResource AccentBlueBrush}"
+                                                   HorizontalAlignment="Center"
+                                                   Visibility="{Binding IsEditing, Converter={StaticResource BoolToVis}}"
+                                                   Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <!-- Lyrics below bar -->
+                            <ItemsControl ItemsSource="{Binding LyricsLines}"
+                                          Visibility="{Binding DataContext.ShowLyrics, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVis}}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <DockPanel Width="160">
+                                            <TextBlock DockPanel.Dock="Left" Text="{Binding Label}"
+                                                       FontSize="8" Foreground="#6688aa" VerticalAlignment="Center"
+                                                       Margin="0,0,2,0" Width="14"/>
+                                            <TextBox x:Name="LyricsBox"
+                                                     Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}"
+                                                     FontSize="{Binding DataContext.LyricsFontSize, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                     Padding="2,1" TextWrapping="NoWrap" Height="18"
+                                                     Background="#18ffffff" Foreground="#c8c8e0"
+                                                     BorderBrush="#30ffffff" BorderThickness="1"
+                                                     HorizontalContentAlignment="Center"
+                                                     GotFocus="LyricsBox_GotFocus"
+                                                     PreviewKeyDown="LyricsBox_PreviewKeyDown"/>
+                                        </DockPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+
+        <!-- ═══════════ BAR SETTINGS OVERLAY ═══════════ -->
+        <Grid Grid.Row="0" Grid.RowSpan="5"
+              Visibility="{Binding IsChordPickerOpen, Converter={StaticResource BoolToVis}}"
+              Background="#AA000000"
+              MouseDown="PickerOverlay_MouseDown">
+            <Border Width="540" Height="520"
+                    CornerRadius="14"
+                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Background="{StaticResource CardBgBrush}"
+                    BorderBrush="{StaticResource CardBorderBrush}"
+                    BorderThickness="2"
+                    MouseDown="PickerPanel_MouseDown">
+                <Grid Margin="20">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Title + time sig -->
+                    <DockPanel Grid.Row="0" Margin="0,0,0,8">
+                        <TextBlock Text="Bar Settings" FontSize="18" FontWeight="Bold"
+                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                   VerticalAlignment="Center"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                            <TextBlock Text="Time Sig" Foreground="{StaticResource TextSecondaryBrush}"
+                                       FontSize="12" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <ComboBox Width="65" VerticalAlignment="Center"
+                                      SelectedItem="{Binding PickerBarTimeSig}">
+                                <sys:Int32>0</sys:Int32>
+                                <sys:Int32>2</sys:Int32>
+                                <sys:Int32>3</sys:Int32>
+                                <sys:Int32>4</sys:Int32>
+                                <sys:Int32>5</sys:Int32>
+                                <sys:Int32>6</sys:Int32>
+                                <sys:Int32>7</sys:Int32>
+                            </ComboBox>
+                            <TextBlock Text="(0=global)" Foreground="#555" FontSize="10"
+                                       VerticalAlignment="Center" Margin="5,0,0,0"/>
+                        </StackPanel>
+                    </DockPanel>
+
+                    <!-- Beat target selector -->
+                    <StackPanel Grid.Row="1" Margin="0,0,0,10">
+                        <TextBlock Text="Apply chord to" FontSize="12"
+                                   Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                        <WrapPanel>
+                            <RadioButton Content=" All Beats " GroupName="Beat"
+                                         IsChecked="{Binding IsPickerAllBeats, Mode=OneWay}"
+                                         Style="{StaticResource {x:Type RadioButton}}"
+                                         Foreground="{StaticResource TextPrimaryBrush}" FontSize="12"
+                                         Margin="0,0,8,0"
+                                         Command="{Binding SetPickerBeatCommand}">
+                                <RadioButton.CommandParameter>
+                                    <sys:Int32>-1</sys:Int32>
+                                </RadioButton.CommandParameter>
+                            </RadioButton>
+                            <RadioButton Content=" Beat 1 " GroupName="Beat"
+                                         IsChecked="{Binding IsPickerBeat1, Mode=OneWay}"
+                                         Foreground="{StaticResource TextPrimaryBrush}" FontSize="12"
+                                         Margin="0,0,6,0"
+                                         Command="{Binding SetPickerBeatCommand}">
+                                <RadioButton.CommandParameter>
+                                    <sys:Int32>0</sys:Int32>
+                                </RadioButton.CommandParameter>
+                            </RadioButton>
+                            <RadioButton Content=" Beat 2 " GroupName="Beat"
+                                         IsChecked="{Binding IsPickerBeat2, Mode=OneWay}"
+                                         Foreground="{StaticResource TextPrimaryBrush}" FontSize="12"
+                                         Margin="0,0,6,0"
+                                         Command="{Binding SetPickerBeatCommand}">
+                                <RadioButton.CommandParameter>
+                                    <sys:Int32>1</sys:Int32>
+                                </RadioButton.CommandParameter>
+                            </RadioButton>
+                            <RadioButton Content=" Beat 3 " GroupName="Beat"
+                                         IsChecked="{Binding IsPickerBeat3, Mode=OneWay}"
+                                         Foreground="{StaticResource TextPrimaryBrush}" FontSize="12"
+                                         Margin="0,0,6,0"
+                                         Visibility="{Binding PickerShowBeat3, Converter={StaticResource BoolToVis}}"
+                                         Command="{Binding SetPickerBeatCommand}">
+                                <RadioButton.CommandParameter>
+                                    <sys:Int32>2</sys:Int32>
+                                </RadioButton.CommandParameter>
+                            </RadioButton>
+                            <RadioButton Content=" Beat 4 " GroupName="Beat"
+                                         IsChecked="{Binding IsPickerBeat4, Mode=OneWay}"
+                                         Foreground="{StaticResource TextPrimaryBrush}" FontSize="12"
+                                         Margin="0,0,6,0"
+                                         Visibility="{Binding PickerShowBeat4, Converter={StaticResource BoolToVis}}"
+                                         Command="{Binding SetPickerBeatCommand}">
+                                <RadioButton.CommandParameter>
+                                    <sys:Int32>3</sys:Int32>
+                                </RadioButton.CommandParameter>
+                            </RadioButton>
+                            <RadioButton Content=" Beat 5 " GroupName="Beat"
+                                         IsChecked="{Binding IsPickerBeat5, Mode=OneWay}"
+                                         Foreground="{StaticResource TextPrimaryBrush}" FontSize="12"
+                                         Visibility="{Binding PickerShowBeat5, Converter={StaticResource BoolToVis}}"
+                                         Command="{Binding SetPickerBeatCommand}">
+                                <RadioButton.CommandParameter>
+                                    <sys:Int32>4</sys:Int32>
+                                </RadioButton.CommandParameter>
+                            </RadioButton>
+                        </WrapPanel>
+                    </StackPanel>
+
+                    <!-- Root Note -->
+                    <TextBlock Grid.Row="2" Text="Root Note" FontSize="12"
+                               Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                    <WrapPanel Grid.Row="3" Margin="0,0,0,8">
+                        <Button Style="{StaticResource PickerButton}" Content="C"
+                                Command="{Binding SelectRootCommand}" CommandParameter="{x:Static models:NoteName.C}"/>
+                        <Button Style="{StaticResource PickerButton}" Content="C#"
+                                Command="{Binding SelectRootCommand}" CommandParameter="{x:Static models:NoteName.CSharp}"/>
+                        <Button Style="{StaticResource PickerButton}" Content="D"
+                                Command="{Binding SelectRootCommand}" CommandParameter="{x:Static models:NoteName.D}"/>
+                        <Button Style="{StaticResource PickerButton}" Content="Eb"
+                                Command="{Binding SelectRootCommand}" CommandParameter="{x:Static models:NoteName.EFlat}"/>
+                        <Button Style="{StaticResource PickerButton}" Content="E"
+                                Command="{Binding SelectRootCommand}" CommandParameter="{x:Static models:NoteName.E}"/>
+                        <Button Style="{StaticResource PickerButton}" Content="F"
+                                Command="{Binding SelectRootCommand}" CommandParameter="{x:Static models:NoteName.F}"/>
+                        <Button Style="{StaticResource PickerButton}" Content="F#"
+                                Command="{Binding SelectRootCommand}" CommandParameter="{x:Static models:NoteName.FSharp}"/>
+                        <Button Style="{StaticResource PickerButton}" Content="G"
+                                Command="{Binding SelectRootCommand}" CommandParameter="{x:Static models:NoteName.G}"/>
+                        <Button Style="{StaticResource PickerButton}" Content="Ab"
+                                Command="{Binding SelectRootCommand}" CommandParameter="{x:Static models:NoteName.AFlat}"/>
+                        <Button Style="{StaticResource PickerButton}" Content="A"
+                                Command="{Binding SelectRootCommand}" CommandParameter="{x:Static models:NoteName.A}"/>
+                        <Button Style="{StaticResource PickerButton}" Content="Bb"
+                                Command="{Binding SelectRootCommand}" CommandParameter="{x:Static models:NoteName.BFlat}"/>
+                        <Button Style="{StaticResource PickerButton}" Content="B"
+                                Command="{Binding SelectRootCommand}" CommandParameter="{x:Static models:NoteName.B}"/>
+                    </WrapPanel>
+
+                    <!-- Preview -->
+                    <TextBlock Grid.Row="4" FontSize="13" FontWeight="SemiBold"
+                               Foreground="{StaticResource AccentBlueBrush}"
+                               HorizontalAlignment="Center" Margin="0,0,0,6">
+                        <TextBlock.Text>
+                            <MultiBinding StringFormat="Root: {0}  |  {1}">
+                                <Binding Path="PickerPreview"/>
+                                <Binding Path="PickerBeatLabel"/>
+                            </MultiBinding>
+                        </TextBlock.Text>
+                    </TextBlock>
+
+                    <!-- Quality -->
+                    <TextBlock Grid.Row="5" Text="Quality (click to apply)" FontSize="12"
+                               Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                    <WrapPanel Grid.Row="6" Margin="0,0,0,8">
+                        <Button Style="{StaticResource PickerButton}" Content="Major"
+                                Command="{Binding SelectQualityCommand}" CommandParameter="{x:Static models:ChordQuality.Major}"/>
+                        <Button Style="{StaticResource PickerButton}" Content="min"
+                                Command="{Binding SelectQualityCommand}" CommandParameter="{x:Static models:ChordQuality.Minor}"/>
+                        <Button Style="{StaticResource PickerButton}" Content="7"
+                                Command="{Binding SelectQualityCommand}" CommandParameter="{x:Static models:ChordQuality.Dominant7}"/>
+                        <Button Style="{StaticResource PickerButton}" Content="maj7"
+                                Command="{Binding SelectQualityCommand}" CommandParameter="{x:Static models:ChordQuality.Major7}"/>
+                        <Button Style="{StaticResource PickerButton}" Content="min7"
+                                Command="{Binding SelectQualityCommand}" CommandParameter="{x:Static models:ChordQuality.Minor7}"/>
+                        <Button Style="{StaticResource PickerButton}" Content="dim"
+                                Command="{Binding SelectQualityCommand}" CommandParameter="{x:Static models:ChordQuality.Diminished}"/>
+                        <Button Style="{StaticResource PickerButton}" Content="aug"
+                                Command="{Binding SelectQualityCommand}" CommandParameter="{x:Static models:ChordQuality.Augmented}"/>
+                        <Button Style="{StaticResource PickerButton}" Content="sus2"
+                                Command="{Binding SelectQualityCommand}" CommandParameter="{x:Static models:ChordQuality.Sus2}"/>
+                        <Button Style="{StaticResource PickerButton}" Content="sus4"
+                                Command="{Binding SelectQualityCommand}" CommandParameter="{x:Static models:ChordQuality.Sus4}"/>
+                        <Rectangle Width="16"/>
+                        <Button Style="{StaticResource PickerButton}" Content="✕ Clear"
+                                Command="{Binding ClearChordCommand}" Foreground="#ff6b6b"/>
+                    </WrapPanel>
+
+                    <!-- Done button -->
+                    <Button Grid.Row="8" Style="{StaticResource TransportButton}"
+                            Content="Done" Command="{Binding ClosePickerCommand}"
+                            Padding="30,8" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- ═══════════ LOOP EDITOR OVERLAY ═══════════ -->
+        <Grid Grid.Row="0" Grid.RowSpan="5"
+              Visibility="{Binding IsLoopEditorOpen, Converter={StaticResource BoolToVis}}"
+              Background="#AA000000"
+              MouseDown="PickerOverlay_MouseDown">
+            <Border Width="380" Height="300"
+                    CornerRadius="14"
+                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Background="{StaticResource CardBgBrush}"
+                    BorderBrush="{StaticResource CardBorderBrush}"
+                    BorderThickness="2"
+                    MouseDown="PickerPanel_MouseDown">
+                <StackPanel Margin="24">
+                    <TextBlock Text="Loop Settings" FontSize="18" FontWeight="Bold"
+                               Foreground="{StaticResource TextPrimaryBrush}"
+                               HorizontalAlignment="Center" Margin="0,0,0,16"/>
+
+                    <!-- Loop name -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                        <TextBlock Text="Name" Foreground="{StaticResource TextSecondaryBrush}"
+                                   FontSize="13" VerticalAlignment="Center" Width="80"/>
+                        <TextBox Text="{Binding EditLoopName, UpdateSourceTrigger=PropertyChanged}"
+                                 Width="220" FontSize="14" Padding="6,4"
+                                 Background="#1a1a3a" Foreground="{StaticResource TextPrimaryBrush}"
+                                 BorderBrush="{StaticResource CardBorderBrush}"/>
+                    </StackPanel>
+
+                    <!-- Bar range -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                        <TextBlock Text="From bar" Foreground="{StaticResource TextSecondaryBrush}"
+                                   FontSize="13" VerticalAlignment="Center" Width="80"/>
+                        <TextBox Text="{Binding EditLoopStartBar, UpdateSourceTrigger=PropertyChanged}"
+                                 Width="50" FontSize="14" Padding="6,4"
+                                 Background="#1a1a3a" Foreground="{StaticResource TextPrimaryBrush}"
+                                 BorderBrush="{StaticResource CardBorderBrush}"
+                                 HorizontalContentAlignment="Center"/>
+                        <TextBlock Text="to bar" Foreground="{StaticResource TextSecondaryBrush}"
+                                   FontSize="13" VerticalAlignment="Center" Margin="12,0,8,0"/>
+                        <TextBox Text="{Binding EditLoopEndBar, UpdateSourceTrigger=PropertyChanged}"
+                                 Width="50" FontSize="14" Padding="6,4"
+                                 Background="#1a1a3a" Foreground="{StaticResource TextPrimaryBrush}"
+                                 BorderBrush="{StaticResource CardBorderBrush}"
+                                 HorizontalContentAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- Section type -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                        <TextBlock Text="Section" Foreground="{StaticResource TextSecondaryBrush}"
+                                   FontSize="13" VerticalAlignment="Center" Width="80"/>
+                        <ComboBox Width="160" VerticalAlignment="Center"
+                                  ItemsSource="{Binding AllSectionTypes}"
+                                  SelectedItem="{Binding EditLoopSectionType}"/>
+                        <TextBlock Text="(None = loop only)" Foreground="#666"
+                                   FontSize="10" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                    </StackPanel>
+
+                    <!-- Repeat count -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
+                        <TextBlock Text="Repeats" Foreground="{StaticResource TextSecondaryBrush}"
+                                   FontSize="13" VerticalAlignment="Center" Width="80"/>
+                        <TextBox Text="{Binding EditLoopRepeat, UpdateSourceTrigger=PropertyChanged}"
+                                 Width="60" FontSize="14" Padding="6,4"
+                                 Background="#1a1a3a" Foreground="{StaticResource TextPrimaryBrush}"
+                                 BorderBrush="{StaticResource CardBorderBrush}"
+                                 HorizontalContentAlignment="Center"/>
+                        <TextBlock Text="times (1 = no loop, section only)" Foreground="{StaticResource TextSecondaryBrush}"
+                                   FontSize="13" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                    </StackPanel>
+
+                    <!-- Buttons -->
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <Button Style="{StaticResource TransportButton}"
+                                Content="OK" Command="{Binding ConfirmLoopEditCommand}"
+                                Padding="20,8" Margin="0,0,10,0"/>
+                        <Button Style="{StaticResource TransportButton}"
+                                Content="Cancel" Command="{Binding CancelLoopEditCommand}"
+                                Padding="20,8"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- ═══════════ COMPOSING HELP OVERLAY ═══════════ -->
+        <Grid Grid.Row="0" Grid.RowSpan="5"
+              Visibility="{Binding IsComposingHelpOpen, Converter={StaticResource BoolToVis}}"
+              Background="#AA000000"
+              MouseDown="PickerOverlay_MouseDown">
+            <Border Width="620" MaxHeight="600"
+                    CornerRadius="14"
+                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Background="{StaticResource CardBgBrush}"
+                    BorderBrush="{StaticResource CardBorderBrush}"
+                    BorderThickness="2"
+                    MouseDown="PickerPanel_MouseDown">
+                <Grid Margin="24">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="Composing Helper — Key &amp; Scale" FontSize="18" FontWeight="Bold"
+                               Foreground="{StaticResource TextPrimaryBrush}"
+                               HorizontalAlignment="Center" Margin="0,0,0,12"/>
+
+                    <!-- Key + Scale selectors -->
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,8">
+                        <TextBlock Text="Key" Foreground="{StaticResource TextSecondaryBrush}"
+                                   FontSize="13" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <ComboBox Width="80" VerticalAlignment="Center"
+                                  ItemsSource="{Binding AllNotes}"
+                                  SelectedItem="{Binding ComposingKey}" Margin="0,0,16,0"/>
+                        <TextBlock Text="Scale" Foreground="{StaticResource TextSecondaryBrush}"
+                                   FontSize="13" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <ComboBox Width="90" VerticalAlignment="Center"
+                                  ItemsSource="{Binding AllScales}"
+                                  SelectedItem="{Binding ComposingScale}"/>
+                    </StackPanel>
+
+                    <TextBlock Grid.Row="2" FontSize="14" FontWeight="SemiBold"
+                               Foreground="{StaticResource AccentBlueBrush}"
+                               HorizontalAlignment="Center" Margin="0,0,0,10">
+                        <TextBlock.Text>
+                            <MultiBinding StringFormat="{}Key of {0} {1}  —  click any chord to preview">
+                                <Binding Path="ComposingKey"/>
+                                <Binding Path="ComposingScale"/>
+                            </MultiBinding>
+                        </TextBlock.Text>
+                    </TextBlock>
+
+                    <!-- Grouped chord sections (scrollable) -->
+                    <ScrollViewer Grid.Row="3" VerticalScrollBarVisibility="Auto" Margin="0,0,0,8">
+                        <ItemsControl ItemsSource="{Binding ChordGroups}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type models:ScaleChordGroup}">
+                                    <StackPanel Margin="0,0,0,10">
+                                        <TextBlock Text="{Binding GroupName}" FontSize="12" FontWeight="Bold"
+                                                   Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                                        <ItemsControl ItemsSource="{Binding Chords}">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <WrapPanel/>
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate DataType="{x:Type models:ScaleChordInfo}">
+                                                    <Button Margin="3,2" Padding="8,5" Cursor="Hand"
+                                                            Style="{StaticResource PickerButton}"
+                                                            Command="{Binding DataContext.PlaySingleChordCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                            CommandParameter="{Binding}">
+                                                        <StackPanel HorizontalAlignment="Center">
+                                                            <TextBlock Text="{Binding Display}" FontSize="13" FontWeight="Bold"
+                                                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                                                       HorizontalAlignment="Center"/>
+                                                            <TextBlock Text="{Binding Degree}" FontSize="9"
+                                                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                                                       HorizontalAlignment="Center"/>
+                                                        </StackPanel>
+                                                    </Button>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+
+                    <!-- Close button -->
+                    <Button Grid.Row="4" Style="{StaticResource TransportButton}"
+                            Content="Close" Command="{Binding ToggleComposingHelpCommand}"
+                            Padding="30,8" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- ═══════════ STRUM PATTERN EDITOR OVERLAY ═══════════ -->
+        <Grid Grid.Row="0" Grid.RowSpan="5"
+              Visibility="{Binding IsStrumPatternEditorOpen, Converter={StaticResource BoolToVis}}"
+              Background="#AA000000"
+              MouseDown="PickerOverlay_MouseDown">
+            <Border Width="600" MaxHeight="400"
+                    Background="{StaticResource PrimaryBgBrush}"
+                    CornerRadius="12" BorderBrush="{StaticResource CardBorderBrush}"
+                    BorderThickness="2" Padding="16"
+                    VerticalAlignment="Center" HorizontalAlignment="Center"
+                    MouseDown="PickerPanel_MouseDown">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Title + Name -->
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
+                        <TextBlock Text="Strum Pattern Editor" FontSize="16" FontWeight="Bold"
+                                   Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center"
+                                   Margin="0,0,12,0"/>
+                        <TextBlock Text="Name:" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"
+                                   VerticalAlignment="Center" Margin="0,0,4,0"/>
+                        <TextBox Text="{Binding CustomStrumName, UpdateSourceTrigger=LostFocus}"
+                                 Width="160" FontSize="12" Padding="4,2"
+                                 Background="#1a1a3a" Foreground="{StaticResource TextPrimaryBrush}"
+                                 BorderBrush="{StaticResource CardBorderBrush}" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- Summary -->
+                    <TextBlock Grid.Row="1" Text="{Binding StrumPatternSummary}" FontSize="12"
+                               Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap"
+                               Margin="0,0,0,8"/>
+
+                    <!-- Event list -->
+                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" MaxHeight="260">
+                        <ItemsControl ItemsSource="{Binding StrumPatternEvents}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="#12ffffff" CornerRadius="4" Padding="6,4" Margin="0,2">
+                                        <StackPanel Orientation="Horizontal">
+                                            <!-- Event index -->
+                                            <TextBlock Text="{Binding DisplayLabel}" FontSize="14" FontWeight="Bold"
+                                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                                       Width="60" VerticalAlignment="Center"/>
+                                            <!-- Type -->
+                                            <ComboBox ItemsSource="{Binding DataContext.StrumTypeValues, RelativeSource={RelativeSource AncestorType=Grid}}"
+                                                      SelectedItem="{Binding Type}"
+                                                      Width="70" Margin="0,0,4,0" FontSize="11"
+                                                      SelectionChanged="StrumEvent_Changed"/>
+                                            <!-- Duration -->
+                                            <ComboBox ItemsSource="{Binding DataContext.StrumDurationValues, RelativeSource={RelativeSource AncestorType=Grid}}"
+                                                      SelectedItem="{Binding DurationInBeats}"
+                                                      Width="60" Margin="0,0,4,0" FontSize="11"
+                                                      SelectionChanged="StrumEvent_Changed">
+                                                <ComboBox.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock>
+                                                            <TextBlock.Text>
+                                                                <Binding StringFormat="{}{0}"/>
+                                                            </TextBlock.Text>
+                                                        </TextBlock>
+                                                    </DataTemplate>
+                                                </ComboBox.ItemTemplate>
+                                            </ComboBox>
+                                            <!-- Articulation -->
+                                            <ComboBox ItemsSource="{Binding DataContext.StrumArticulationValues, RelativeSource={RelativeSource AncestorType=Grid}}"
+                                                      SelectedItem="{Binding Articulation}"
+                                                      Width="70" Margin="0,0,4,0" FontSize="11"
+                                                      SelectionChanged="StrumEvent_Changed"/>
+                                            <!-- Remove button -->
+                                            <Button Style="{StaticResource TransportButton}"
+                                                    Content="✕" FontSize="10" Padding="4,1"
+                                                    Click="StrumEventRemove_Click"
+                                                    Tag="{Binding}"/>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+
+                    <!-- Buttons -->
+                    <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,8,0,0">
+                        <Button Style="{StaticResource TransportButton}"
+                                Content="+ Add Event" Command="{Binding AddStrumEventCommand}"
+                                Padding="12,6" Margin="0,0,8,0"/>
+                        <Button Style="{StaticResource TransportButton}"
+                                Content="Save Pattern" Click="StrumSave_Click"
+                                Padding="12,6" Margin="0,0,8,0"/>
+                        <Button Style="{StaticResource TransportButton}"
+                                Content="Close" Command="{Binding OpenStrumEditorCommand}"
+                                Padding="20,6"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- ═══════════ STATUS BAR ═══════════ -->
+        <Border Grid.Row="4" Background="#08ffffff" Padding="12,6">
+            <TextBlock Text="{Binding StatusText}"
+                       Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
+        </Border>
+    </Grid>
+</Window>
