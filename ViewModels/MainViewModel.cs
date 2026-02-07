@@ -190,7 +190,11 @@ public class MainViewModel : ViewModelBase, IDisposable
     public bool IsStrumPatternEditorOpen
     {
         get => _isStrumPatternEditorOpen;
-        set => SetProperty(ref _isStrumPatternEditorOpen, value);
+        set
+        {
+            if (SetProperty(ref _isStrumPatternEditorOpen, value) && value)
+                SyncStrumPatternEvents();
+        }
     }
 
     public ObservableCollection<StrumEvent> StrumPatternEvents { get; } = new();

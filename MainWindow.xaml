@@ -845,10 +845,6 @@
                                 <DataTemplate>
                                     <Border Background="#12ffffff" CornerRadius="4" Padding="6,4" Margin="0,2">
                                         <StackPanel Orientation="Horizontal">
-                                            <!-- Event index -->
-                                            <TextBlock Text="{Binding DisplayLabel}" FontSize="14" FontWeight="Bold"
-                                                       Foreground="{StaticResource TextPrimaryBrush}"
-                                                       Width="60" VerticalAlignment="Center"/>
                                             <!-- Type -->
                                             <ComboBox ItemsSource="{Binding DataContext.StrumTypeValues, RelativeSource={RelativeSource AncestorType=Grid}}"
                                                       SelectedItem="{Binding Type}"

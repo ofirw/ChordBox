@@ -166,15 +166,10 @@ public partial class MainWindow : Window
 
         // The ComboBox has already pushed the new value into the StrumEvent
         // via two-way binding. We just need to ensure we're on a custom pattern
-        // and refresh the summary. If clone happens, the current event objects
-        // (which already have the new values) get cloned too.
+        // and refresh the summary. Suppress re-entrant calls during clone+sync.
+        _suppressStrumEventChanged = true;
         _viewModel.EnsureCustomStrumPattern();
-        OnPropertyChanged_Summary();
-    }
-
-    private void OnPropertyChanged_Summary()
-    {
-        // Just refresh summary without re-syncing the collection (avoids losing ComboBox state)
+        _suppressStrumEventChanged = false;
         _viewModel.RefreshStrumSummary();
     }
 
